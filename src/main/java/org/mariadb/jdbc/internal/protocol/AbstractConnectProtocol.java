@@ -126,6 +126,10 @@ public abstract class AbstractConnectProtocol implements Protocol {
   private int minorVersion;
   private int patchVersion;
   private TimeZone timeZone;
+  protected HostAddress redirectHost;
+  protected String redirectUser;
+  protected RedirectionInfoCache redirectionInfoCache;
+  protected boolean isUsingRedirectInfo;
 
   /**
    * Get a protocol instance.
@@ -146,6 +150,13 @@ public abstract class AbstractConnectProtocol implements Protocol {
     if (options.cachePrepStmts && options.useServerPrepStmts) {
       serverPrepareStatementCache =
           ServerPrepareStatementCache.newInstance(options.prepStmtCacheSize, this);
+    }
+    if (options.enableRedirect) {
+        //use -1 for unlimited for now, may need add a new option like options.redirectionInfoCacheSize
+        redirectionInfoCache = RedirectionInfoCache.newInstance(-1);
+        isUsingRedirectInfo = false;
+        redirectHost = null;
+        redirectUser = null;
     }
   }
 
@@ -449,6 +460,26 @@ public abstract class AbstractConnectProtocol implements Protocol {
       close();
     }
 
+    //check cache first to see if the redirect host info has already been cached
+    if (options.enableRedirect) {
+        RedirectionInfo redirectInfo = redirectionInfoCache.getRedirectionInfo(username, currentHost);
+        if (redirectInfo != null) {
+            redirectHost = redirectInfo.getHost();
+            redirectUser = redirectInfo.getUser();
+            isUsingRedirectInfo = true;
+            try {
+                createConnection(redirectHost, redirectUser);
+                return; //if connect successfully with cached redirect info, return from this function, otherwise go normal connect routine
+            } catch (SQLException exception) {
+                isUsingRedirectInfo = false;
+                redirectionInfoCache.removeRedirectionInfo(username, currentHost);
+                redirectHost = null;
+                redirectUser = null;
+            }
+        }
+    }
+
+    //use user provided host info to connect
     try {
       createConnection(currentHost, username);
     } catch (SQLException exception) {
@@ -459,6 +490,67 @@ public abstract class AbstractConnectProtocol implements Protocol {
   }
 
   private void createConnection(HostAddress hostAddress, String username) throws SQLException {
+    try {
+      handleConnectionPhases(hostAddress, username);
+
+      if (!isUsingRedirectInfo && isRedirectionAvailable()) {
+        PacketInputStream originalReader = this.reader;
+        PacketOutputStream originalWriter = this.writer;
+        Socket originalSocket = this.socket;
+
+        try {
+          isUsingRedirectInfo = true;
+          handleConnectionPhases(redirectHost, redirectUser);
+          redirectionInfoCache.putRedirectionInfo(username, currentHost, redirectUser, redirectHost);
+
+          //close the original connection
+          try {
+        	  if(originalSocket != null) {
+        		  originalSocket.close();
+        	  }
+        	  if(originalReader != null) {
+        		  originalReader.close();
+        	  }
+        	  if(originalWriter != null) {
+        		  originalWriter.close();
+        	  }
+          } catch (IOException e) {
+        	  //eat exception
+          }
+        } catch (SQLException e) {
+            isUsingRedirectInfo = false;
+            destroySocket();
+            this.reader = originalReader;
+            this.writer = originalWriter;
+            this.socket = originalSocket;
+        }
+      }
+
+      compressionHandler(options);
+    } catch (SQLException ioException) {
+      destroySocket();
+      throw ioException;
+    }
+
+    connected = true;
+
+    this.reader.setServerThreadId(this.serverThreadId, isMasterConnection());
+    this.writer.setServerThreadId(this.serverThreadId, isMasterConnection());
+
+    if (this.options.socketTimeout != null) {
+      this.socketTimeout = this.options.socketTimeout;
+    }
+    if ((serverCapabilities & MariaDbServerCapabilities.CLIENT_DEPRECATE_EOF) != 0) {
+      eofDeprecated = true;
+    }
+
+    postConnectionQueries();
+
+    activeStreamingResult = null;
+    hostFailed = false;
+  }
+
+  private void handleConnectionPhases(HostAddress hostAddress, String user) throws SQLException {
 
     String host = hostAddress != null ? hostAddress.host : null;
     int port = hostAddress != null ? hostAddress.port : 3306;
@@ -466,9 +558,9 @@ public abstract class AbstractConnectProtocol implements Protocol {
     Credential credential;
     CredentialPlugin credentialPlugin = urlParser.getCredentialPlugin();
     if (credentialPlugin != null) {
-      credential = credentialPlugin.initialize(options, username, hostAddress).get();
+      credential = credentialPlugin.initialize(options, user, hostAddress).get();
     } else {
-      credential = new Credential(username, urlParser.getPassword());
+      credential = new Credential(user, urlParser.getPassword());
     }
 
     this.socket = createSocket(host, port, options);
@@ -513,8 +605,6 @@ public abstract class AbstractConnectProtocol implements Protocol {
           database,
           credential,
           host);
-
-      compressionHandler(options);
     } catch (IOException ioException) {
       destroySocket();
       if (host == null) {
@@ -533,23 +623,6 @@ public abstract class AbstractConnectProtocol implements Protocol {
       destroySocket();
       throw sqlException;
     }
-
-    connected = true;
-
-    this.reader.setServerThreadId(this.serverThreadId, isMasterConnection());
-    this.writer.setServerThreadId(this.serverThreadId, isMasterConnection());
-
-    if (this.options.socketTimeout != null) {
-      this.socketTimeout = this.options.socketTimeout;
-    }
-    if ((serverCapabilities & MariaDbServerCapabilities.CLIENT_DEPRECATE_EOF) != 0) {
-      eofDeprecated = true;
-    }
-
-    postConnectionQueries();
-
-    activeStreamingResult = null;
-    hostFailed = false;
   }
 
   /** Closing socket in case of Connection error after socket creation. */
@@ -736,6 +809,14 @@ public abstract class AbstractConnectProtocol implements Protocol {
            */
           OkPacket okPacket = new OkPacket(buffer);
           serverStatus = okPacket.getServerStatus();
+
+          if (options.enableRedirect && !isRedirectionAvailable()) {
+            String msg = okPacket.getMessage();
+            RedirectionInfo redirectInfo = RedirectionInfo.parseRedirectionInfo(msg);
+            redirectHost = redirectInfo.getHost();
+            redirectUser = redirectInfo.getUser();
+          }
+
           break authentication_loop;
 
         default:
@@ -827,6 +908,17 @@ public abstract class AbstractConnectProtocol implements Protocol {
       destroySocket();
       throw sqlException;
     }
+  }
+
+  /**
+   * Condition that redirection is available
+   */
+  private boolean isRedirectionAvailable() {
+      return options.enableRedirect
+              && redirectHost != null
+              && redirectHost.host != ""
+              && redirectHost.port != -1
+              && (redirectHost.host != currentHost.host || redirectHost.port != currentHost.port || redirectUser != username);
   }
 
   /**

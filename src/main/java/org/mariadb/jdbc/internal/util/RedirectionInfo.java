@@ -3,7 +3,7 @@
  * MariaDB Client for Java
  *
  * Copyright (c) 2012-2014 Monty Program Ab.
- * Copyright (c) 2015-2019 MariaDB Ab.
+ * Copyright (c) 2015-2017 MariaDB Ab.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -50,67 +50,69 @@
  *
  */
 
-package org.mariadb.jdbc.internal.com.read;
+package org.mariadb.jdbc.internal.util;
 
-import java.nio.charset.StandardCharsets;
+import org.mariadb.jdbc.HostAddress;
 
-public class OkPacket {
+public class RedirectionInfo {
+    private final HostAddress host;
+    private final String user;
 
-  private final long affectedRows;
-  private final long insertId;
-  private final short serverStatus;
-  private final short warnings;
-  private final String message;
-
-  /**
-   * Read Ok stream result.
-   *
-   * @param buffer current stream's rawBytes
-   */
-  public OkPacket(Buffer buffer) {
-    buffer.skipByte(); // fieldCount
-    affectedRows = buffer.getLengthEncodedNumeric();
-    insertId = buffer.getLengthEncodedNumeric();
-    serverStatus = buffer.readShort();
-    warnings = buffer.readShort();
-    if (buffer.remaining() > 0) {
-        message = buffer.readStringLengthEncoded(StandardCharsets.UTF_8);
-    } else {
-        message = "";
+    public RedirectionInfo(HostAddress host, String user) {
+        this.host = host;
+        this.user = user;
     }
-  }
 
-  @Override
-  public String toString() {
-    return "affectedRows = "
-        + affectedRows
-        + "&insertId = "
-        + insertId
-        + "&serverStatus="
-        + serverStatus
-        + "&warnings="
-        + warnings
-        + "&message="
-        + message;
-  }
+    public HostAddress getHost() {
+        return host;
+    }
 
-  public long getAffectedRows() {
-    return affectedRows;
-  }
+    public String getUser() {
+        return user;
+    }
 
-  public long getInsertId() {
-    return insertId;
-  }
+    /**
+    * Parse redirection info from a message return by server.
+    *
+    * @param msg  the string which may contain redirection information.
+    * @return RedirectionInfo host and user for redirection.
+    */
+    public static RedirectionInfo parseRedirectionInfo(String msg) {
+        /**
+         * Get redirected server information contained in OK packet.
+         * Redirection string somehow look like:
+         * Location: mysql://redirectedHostName:redirectedPort/user=redirectedUser
+         * the minimal len is 27 bytes
+         * @param str   message about server information
+         */
+        String host = "";
+        String user = "";
+        int port = -1;
+        try {
+            if (msg.indexOf("Location") != -1 && msg.indexOf("mysql://") != -1) {
+                // redirect host
+                msg = msg.substring("Location: mysql://".length());
+                int beginIdx = 0;
+                int endIdx = msg.indexOf(':');
+                host = msg.substring(beginIdx, endIdx);
+                //redirect port
+                beginIdx = endIdx + 1;
+                endIdx = msg.indexOf('/');
+                port = Integer.parseInt(msg.substring(beginIdx, endIdx));
+                beginIdx = msg.indexOf('=') + 1;
+                user = msg.substring(beginIdx); //, end_idx
+            } else {
+                // if no cloud redirected server info, then initialize it
+                host = "";
+                port = -1;
+                user = "";
+            }
+        } catch (Exception e) {
+            host = "";
+            port = -1;
+            user = "";
+        }
 
-  public short getServerStatus() {
-    return serverStatus;
-  }
-
-  public short getWarnings() {
-    return warnings;
-  }
-
-  public String getMessage() {
-      return message;
-  }
+        return new RedirectionInfo(new HostAddress(host, port), user);
+    }
 }

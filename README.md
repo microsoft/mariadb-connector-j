@@ -1,68 +1,61 @@
 <p align="center">
-  <a href="http://mariadb.com/">
-    <img src="https://mariadb.com/kb/static/images/logo-2018-black.png">
+  <a href="http://mariadb.org/">
+    <img src="https://mariadb.com/themes/custom/mariadb/logo.svg">
   </a>
 </p>
 
-# MariaDB java connector
+# MariaDB java connector Build Guide
 
-MariaDB java connector is a JDBC 4.2 compatible driver, used to connect applications developed in Java to MariaDB and MySQL databases. MariaDB Connector/J is LGPL licensed.
+For general introduction for MariaDB java connector, please check on  https://github.com/MariaDB/mariadb-connector-j .
+The source code here is in the latest version same with the master branch on https://github.com/MariaDB/mariadb-connector-j with redirection feature support. 
+Following is a brief guide of how to build and test the driver. 
 
-Tracker link <a href="https://jira.mariadb.org/projects/CONJ/issues/">https://jira.mariadb.org/projects/CONJ/issues/</a>
+## MariaDB version
+* The source code here is in the latest version same with the master branch on https://github.com/MariaDB/mariadb-connector-j with redirection feature support.
 
-## Status
-[![Linux Build](https://travis-ci.org/MariaDB/mariadb-connector-j.svg?branch=master)](https://travis-ci.org/MariaDB/mariadb-connector-j)
-[![Windows Build](https://ci.appveyor.com/api/projects/status/7hpe3wmbu57r8noa/branch/master?svg=true)](https://ci.appveyor.com/project/rusher/mariadb-connector-j/branch/master)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.mariadb.jdbc/mariadb-java-client/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.mariadb.jdbc/mariadb-java-client)
-[![License (LGPL version 2.1)](https://img.shields.io/badge/license-GNU%20LGPL%20version%202.1-green.svg?style=flat-square)](http://opensource.org/licenses/LGPL-2.1)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/be7f4c89d63e496d824e8f365478e8c8)](https://www.codacy.com/app/diego-dupin/mariadb-connector-j?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=MariaDB/mariadb-connector-j&amp;utm_campaign=Badge_Grade)
+## Tools prerequisite to build the drivers
+* Java 1.8+
+* Maven
 
-## Obtaining the driver
+## Step to build
+* Assuming the code directory is  mariadb-connector-j
+* Git clone https://github.com/Microsoft/mariadb-connector-j
+* cd mariadb-connector-j
+* mvn package, 
+	If you want to build without running unit tests, use
+    mvn -Dmaven.test.skip=true package
+	Otherwise, the default test database names is testj, user root without password. You can also specify the connection string as follows:
+	mvn -DdbUrl=jdbc:mariadb://localhost:3306/testj?user=root&password=xxx -DlogLevel=FINEST package
 
-| Java version | current version |
-|:------------:|:-------------------------:|
-| 6 | 1.7.4 |
-| 7 | 1.7.4 |
-| 8+ | 2.5.2 |
+After that, you should have JDBC jar mariadb-java-client-x.y.z.jar in the 'target' subdirectory.
 
-The driver (jar) can be downloaded from [mariadb connector download](https://mariadb.com/products/connectors-plugins)
-or maven : 
-```script
-<dependency>
-	<groupId>org.mariadb.jdbc</groupId>
-	<artifactId>mariadb-java-client</artifactId>
-	<version>2.5.1</version>
-</dependency>
+## Step to test
+* The pdf document http://www.ccs.neu.edu/home/kathleen/classes/cs3200/JDBCtutorial.pdf is a step by step guide to use JDBC with Eclipse. 
+The difference here is that in step 2, you do not need to go to http://www.mysql.com/downloads/connector/j/ to download the jar, but using the one built in the ‘target’. After setup the environment,  following is a version of sample code to test "SELECT 1" performance.
+
+```java
+    // Load the JDBC driver
+    Class.forName("org.mariadb.jdbc.Driver");
+    System.out.println("Driver loaded");
+
+    int count = 10;
+    String query = "SELECT 1";
+    int i=0;
+    // Try to connect
+    String url = "jdbc:mysql://xxx.mysql.database.azure.com"+
+            "?verifyServerCertificate=false"+
+            "&useSSL=true"+
+            "&requireSSL=true" +
+			"&enableRedirect=true";
+
+    Connection connection = DriverManager.getConnection (url, "username", "password");
+    double t1 = System.nanoTime();
+    Statement s1 = connection.createStatement();
+    for(i=0;i<count;i++)
+    {
+        s1.executeQuery(query);
+    }
+    double t2 = System.nanoTime();
+    System.out.println (" time = " + (t2 - t1)/count/1000000);
+    connection.close();
 ```
-
-Development snapshot are available on sonatype nexus repository  
-```script
-<repositories>
-    <repository>
-        <id>sonatype-nexus-snapshots</id>
-        <name>Sonatype Nexus Snapshots</name>
-        <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </repository>
-</repositories>
-
-<dependencies>
-    <dependency>
-        <groupId>org.mariadb.jdbc</groupId>
-        <artifactId>mariadb-java-client</artifactId>
-        <version>2.6.0-SNAPSHOT</version>
-    </dependency>
-</dependencies>
-```
-
-## Documentation
-
-For a Getting started guide, API docs, recipes,  etc. see the 
-* [About MariaDB connector/J](/documentation/about-mariadb-connector-j.creole)
-* [Use MariaDB connector/j driver](/documentation/use-mariadb-connector-j-driver.creole)
-* [Changelog](/CHANGELOG.md)
-* [Failover and high-availability](/documentation/failover-and-high-availability-with-mariadb-connector-j.creole)
-
-
-## Contributing
-To get started with a development installation and learn more about contributing, please follow the instructions at our 
-[Developers Guide.](/documentation/developers-guide.creole)

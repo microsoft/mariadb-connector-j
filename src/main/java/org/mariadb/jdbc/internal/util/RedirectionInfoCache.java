@@ -3,7 +3,7 @@
  * MariaDB Client for Java
  *
  * Copyright (c) 2012-2014 Monty Program Ab.
- * Copyright (c) 2015-2019 MariaDB Ab.
+ * Copyright (c) 2015-2017 MariaDB Ab.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -50,67 +50,65 @@
  *
  */
 
-package org.mariadb.jdbc.internal.com.read;
+package org.mariadb.jdbc.internal.util;
 
-import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class OkPacket {
+import org.mariadb.jdbc.HostAddress;
 
-  private final long affectedRows;
-  private final long insertId;
-  private final short serverStatus;
-  private final short warnings;
-  private final String message;
+public final class RedirectionInfoCache extends ConcurrentHashMap<String, RedirectionInfo> {
+    private final AtomicInteger maxSize;
 
-  /**
-   * Read Ok stream result.
-   *
-   * @param buffer current stream's rawBytes
-   */
-  public OkPacket(Buffer buffer) {
-    buffer.skipByte(); // fieldCount
-    affectedRows = buffer.getLengthEncodedNumeric();
-    insertId = buffer.getLengthEncodedNumeric();
-    serverStatus = buffer.readShort();
-    warnings = buffer.readShort();
-    if (buffer.remaining() > 0) {
-        message = buffer.readStringLengthEncoded(StandardCharsets.UTF_8);
-    } else {
-        message = "";
+    public RedirectionInfoCache(int sz) {
+        maxSize = new AtomicInteger(sz);
     }
-  }
 
-  @Override
-  public String toString() {
-    return "affectedRows = "
-        + affectedRows
-        + "&insertId = "
-        + insertId
-        + "&serverStatus="
-        + serverStatus
-        + "&warnings="
-        + warnings
-        + "&message="
-        + message;
-  }
+    public static RedirectionInfoCache newInstance(int maxSize) {
+        return new RedirectionInfoCache(maxSize);
+    }
 
-  public long getAffectedRows() {
-    return affectedRows;
-  }
+    private String makeKey(String user, HostAddress host) {
+        return user + "_" + host.host + "_" + host.port;
+    }
 
-  public long getInsertId() {
-    return insertId;
-  }
+    /**
+    * get redirection info from cache.
+    *
+    * @param user  original connection user.
+    * @param host  original connection host.
+    * @return RedirectionInfo host and user for redirection.
+    */
+    public RedirectionInfo getRedirectionInfo(String user, HostAddress host) {
+        String key = makeKey(user, host);
+        return super.get(key);
+    }
 
-  public short getServerStatus() {
-    return serverStatus;
-  }
+    /**
+    * put redirection info into cache.
+    *
+    * @param user           original connection user.
+     * @param host           original connection host.
+     * @param redirectUser   redirection connection user.
+     * @param redirectHost   redirection connection host.
+    */
+    public void putRedirectionInfo(String user, HostAddress host, String redirectUser, HostAddress redirectHost) {
+        String key = makeKey(user, host);
+        if (maxSize.get() == -1 ||  super.size() < maxSize.get()) {
+            super.putIfAbsent(key, new RedirectionInfo(redirectHost, redirectUser));
+        } else {
+          //eat exception, use redirection info without caching it
+        }
+    }
 
-  public short getWarnings() {
-    return warnings;
-  }
-
-  public String getMessage() {
-      return message;
-  }
+    /**
+    * remove redirection info into cache.
+    *
+    * @param user           original connection user.
+    * @param host           original connection host.
+    */
+    public void removeRedirectionInfo(String user, HostAddress host) {
+        String key = makeKey(user, host);
+        super.remove(key);
+    }
 }
