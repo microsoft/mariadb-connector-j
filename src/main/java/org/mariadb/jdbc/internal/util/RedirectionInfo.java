@@ -77,7 +77,7 @@ public class RedirectionInfo {
     public String getUser() {
         return user;
     }
-    
+
     public int getTTL() {
     	return ttl;
     }
@@ -100,22 +100,32 @@ public class RedirectionInfo {
     	int ttl = -1;
         try {
 
-            Pattern INFO_PATTERN =
+            Pattern INFO_PATTERN_COMMUNITY =
             		Pattern.compile("^Location: mysql://\\[([^\\]:]+)\\]:([0-9]+)/\\?user=([^&]+)&ttl=([0-9]+)\\n");
 
-            Matcher m = INFO_PATTERN.matcher(msg);
-            if(m.find()) {
-            	host = m.group(1);
-            	port = Integer.parseInt(m.group(2));
-            	user = m.group(3);
-            	ttl = Integer.parseInt(m.group(4));
+            Pattern INFO_PATTERN_AZURE =
+            		Pattern.compile("^Location: mysql://([^\\]:]+):([0-9]+)/user=([^&]+)(?:&ttl=([0-9]+))?");
+
+            Matcher m_community = INFO_PATTERN_COMMUNITY.matcher(msg);
+            Matcher m_azure = INFO_PATTERN_AZURE.matcher(msg);
+
+            if(m_community.find()) {
+            	host = m_community.group(1);
+            	port = Integer.parseInt(m_community.group(2));
+            	user = m_community.group(3);
+            	ttl = Integer.parseInt(m_community.group(4));
+            } else if(m_azure.find()) {
+                host = m_azure.group(1);
+            	port = Integer.parseInt(m_azure.group(2));
+            	user = m_azure.group(3);
+            	ttl = m_azure.group(4) != null? Integer.parseInt(m_azure.group(4)):23;
             }
 
         } catch (Exception e) {
         	//eat exception
         	e.printStackTrace();
         }
-        
+
         if(host=="") {
         	return null;
         }
