@@ -3,7 +3,7 @@
  * MariaDB Client for Java
  *
  * Copyright (c) 2012-2014 Monty Program Ab.
- * Copyright (c) 2015-2019 MariaDB Ab.
+ * Copyright (c) 2015-2017 MariaDB Ab.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -50,93 +50,65 @@
  *
  */
 
-package org.mariadb.jdbc.internal.com.read;
+package org.mariadb.jdbc.internal.util;
 
-import java.nio.charset.StandardCharsets;
-import org.mariadb.jdbc.internal.MariaDbServerCapabilities;
-import org.mariadb.jdbc.internal.util.constant.ServerStatus;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.mariadb.jdbc.HostAddress;
 
-public class OkPacket {
+public final class RedirectionInfoCache extends ConcurrentHashMap<String, RedirectionInfo> {
+    private final AtomicInteger maxSize;
 
-  private final long affectedRows;
-  private final long insertId;
-  private final short serverStatus;
-  private final short warnings;
-  private final String info;
-  private final String sessionStateInfo;
-
-  /**
-   * Read Ok stream result.
-   *
-   * @param buffer current stream's rawBytes
-   */
-  public OkPacket(Buffer buffer, long clientCapabilities) {
-
-    buffer.skipByte(); // 0x00 OkPacket header
-    affectedRows = buffer.getLengthEncodedNumeric();
-    insertId = buffer.getLengthEncodedNumeric();
- 
-    serverStatus = buffer.readShort();
-    warnings = buffer.readShort();
-    
-    String message = "";
-    String sessionStateMessage = "";
-    if (buffer.remaining() > 0) {
-    	if ((clientCapabilities & MariaDbServerCapabilities.CLIENT_SESSION_TRACK) !=0) {
-    		message = buffer.readStringLengthEncoded(StandardCharsets.UTF_8);
-    		
-        	if ((serverStatus & ServerStatus.SERVER_SESSION_STATE_CHANGED) !=0 && buffer.remaining() > 0)  {
-        		sessionStateMessage = buffer.readStringLengthEncoded(StandardCharsets.UTF_8);
-            }
-        } 
-    	else {
-    		message = buffer.readStringNullEnd(StandardCharsets.UTF_8);
-    	}
+    public RedirectionInfoCache(int sz) {
+        maxSize = new AtomicInteger(sz);
     }
-    info = message;
-    sessionStateInfo = sessionStateMessage;
 
-  }
+    public static RedirectionInfoCache newInstance(int maxSize) {
+        return new RedirectionInfoCache(maxSize);
+    }
 
-  @Override
-  public String toString() {
-    return "affectedRows = "
-        + affectedRows
-        + "&insertId = "
-        + insertId
-        + "&serverStatus="
-        + serverStatus
-        + "&warnings="
-        + warnings
-        + "&info="
-        + info
-        + "&sessionStateInfo="
-        + sessionStateInfo;
-  }
+    private String makeKey(String user, HostAddress host) {
+        return user + "_" + host.host + "_" + host.port;
+    }
 
-  public long getAffectedRows() {
-    return affectedRows;
-  }
+    /**
+    * get redirection info from cache.
+    *
+    * @param user  original connection user.
+    * @param host  original connection host.
+    * @return RedirectionInfo host and user for redirection.
+    */
+    public RedirectionInfo getRedirectionInfo(String user, HostAddress host) {
+        String key = makeKey(user, host);
+        return super.get(key);
+    }
 
-  public long getInsertId() {
-    return insertId;
-  }
+    /**
+    * put redirection info into cache.
+    *
+    * @param user           original connection user.
+     * @param host           original connection host.
+     * @param redirectUser   redirection connection user.
+     * @param redirectHost   redirection connection host.
+    */
+    public void putRedirectionInfo(String user, HostAddress host, HostAddress redirectHost, String redirectUser, int ttl) {
+        String key = makeKey(user, host);
+        if (maxSize.get() == -1 ||  super.size() < maxSize.get()) {
+            super.putIfAbsent(key, new RedirectionInfo(redirectHost, redirectUser, ttl));
+        } else {
+          //eat exception, use redirection info without caching it
+        }
+    }
 
-  public short getServerStatus() {
-    return serverStatus;
-  }
-
-  public short getWarnings() {
-    return warnings;
-  }
-
-  public String getInfo() {
-      return info;
-  }
-  
-  public String getSessionStateInfo() {
-	  return sessionStateInfo;
-  }
-
+    /**
+    * remove redirection info into cache.
+    *
+    * @param user           original connection user.
+    * @param host           original connection host.
+    */
+    public void removeRedirectionInfo(String user, HostAddress host) {
+        String key = makeKey(user, host);
+        super.remove(key);
+    }
 }

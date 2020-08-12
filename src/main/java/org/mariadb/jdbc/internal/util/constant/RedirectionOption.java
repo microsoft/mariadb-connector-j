@@ -3,7 +3,7 @@
  * MariaDB Client for Java
  *
  * Copyright (c) 2012-2014 Monty Program Ab.
- * Copyright (c) 2015-2019 MariaDB Ab.
+ * Copyright (c) 2015-2020 MariaDB Corporation Ab.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -50,93 +50,10 @@
  *
  */
 
-package org.mariadb.jdbc.internal.com.read;
+package org.mariadb.jdbc.internal.util.constant;
 
-import java.nio.charset.StandardCharsets;
-import org.mariadb.jdbc.internal.MariaDbServerCapabilities;
-import org.mariadb.jdbc.internal.util.constant.ServerStatus;
-
-
-public class OkPacket {
-
-  private final long affectedRows;
-  private final long insertId;
-  private final short serverStatus;
-  private final short warnings;
-  private final String info;
-  private final String sessionStateInfo;
-
-  /**
-   * Read Ok stream result.
-   *
-   * @param buffer current stream's rawBytes
-   */
-  public OkPacket(Buffer buffer, long clientCapabilities) {
-
-    buffer.skipByte(); // 0x00 OkPacket header
-    affectedRows = buffer.getLengthEncodedNumeric();
-    insertId = buffer.getLengthEncodedNumeric();
- 
-    serverStatus = buffer.readShort();
-    warnings = buffer.readShort();
-    
-    String message = "";
-    String sessionStateMessage = "";
-    if (buffer.remaining() > 0) {
-    	if ((clientCapabilities & MariaDbServerCapabilities.CLIENT_SESSION_TRACK) !=0) {
-    		message = buffer.readStringLengthEncoded(StandardCharsets.UTF_8);
-    		
-        	if ((serverStatus & ServerStatus.SERVER_SESSION_STATE_CHANGED) !=0 && buffer.remaining() > 0)  {
-        		sessionStateMessage = buffer.readStringLengthEncoded(StandardCharsets.UTF_8);
-            }
-        } 
-    	else {
-    		message = buffer.readStringNullEnd(StandardCharsets.UTF_8);
-    	}
-    }
-    info = message;
-    sessionStateInfo = sessionStateMessage;
-
-  }
-
-  @Override
-  public String toString() {
-    return "affectedRows = "
-        + affectedRows
-        + "&insertId = "
-        + insertId
-        + "&serverStatus="
-        + serverStatus
-        + "&warnings="
-        + warnings
-        + "&info="
-        + info
-        + "&sessionStateInfo="
-        + sessionStateInfo;
-  }
-
-  public long getAffectedRows() {
-    return affectedRows;
-  }
-
-  public long getInsertId() {
-    return insertId;
-  }
-
-  public short getServerStatus() {
-    return serverStatus;
-  }
-
-  public short getWarnings() {
-    return warnings;
-  }
-
-  public String getInfo() {
-      return info;
-  }
-  
-  public String getSessionStateInfo() {
-	  return sessionStateInfo;
-  }
-
+public enum RedirectionOption {
+  OFF,
+  ON,
+  PREFERRED
 }

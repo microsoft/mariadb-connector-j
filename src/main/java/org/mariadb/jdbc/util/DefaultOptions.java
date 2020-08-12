@@ -28,6 +28,9 @@ import org.mariadb.jdbc.internal.util.constant.*;
 
 import java.lang.reflect.*;
 import java.util.*;
+import org.mariadb.jdbc.internal.util.OptionUtils;
+import org.mariadb.jdbc.internal.util.constant.HaMode;
+import org.mariadb.jdbc.internal.util.constant.RedirectionOption;
 
 public enum DefaultOptions {
   USER("user", "1.0.0", "Database user name", false),
@@ -493,6 +496,15 @@ public enum DefaultOptions {
           + "alternative names or the certificate CN) to prevent man-in-the-middle attacks. This option permits "
           + "deactivating this validation. Hostname verification is disabled when the trustServerCertificate "
           + "option is set",
+      false),
+  ENABLE_REDIRECTION(
+      "enableRedirect",
+      RedirectionOption.OFF.toString().toLowerCase(),
+      "2.1.0",
+      "This option determines how redirection will be used: "
+          + "\n off: Do not use redirection."
+          + "\n on: Must use redirection, fail the connection if server does not support redirection or redirection fails."
+          + "\n preferred: Use redirection if supported by the server and redirection is successful; otherwise, do not use redirection.",
       false),
   USE_BULK_PROTOCOL(
       "useBulkStmts",

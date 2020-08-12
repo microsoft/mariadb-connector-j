@@ -3,7 +3,7 @@
  * MariaDB Client for Java
  *
  * Copyright (c) 2012-2014 Monty Program Ab.
- * Copyright (c) 2015-2019 MariaDB Ab.
+ * Copyright (c) 2015-2017 MariaDB Ab.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -50,93 +50,87 @@
  *
  */
 
-package org.mariadb.jdbc.internal.com.read;
+package org.mariadb.jdbc.internal.util;
 
-import java.nio.charset.StandardCharsets;
-import org.mariadb.jdbc.internal.MariaDbServerCapabilities;
-import org.mariadb.jdbc.internal.util.constant.ServerStatus;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.mariadb.jdbc.HostAddress;
 
-public class OkPacket {
+public class RedirectionInfo {
+	//Redirection Info format: Location: mysql://[%s]:%u/?user=%s&ttl=%u\n
 
-  private final long affectedRows;
-  private final long insertId;
-  private final short serverStatus;
-  private final short warnings;
-  private final String info;
-  private final String sessionStateInfo;
+    private final HostAddress host;
+    private final String user;
+    private final int ttl;
 
-  /**
-   * Read Ok stream result.
-   *
-   * @param buffer current stream's rawBytes
-   */
-  public OkPacket(Buffer buffer, long clientCapabilities) {
-
-    buffer.skipByte(); // 0x00 OkPacket header
-    affectedRows = buffer.getLengthEncodedNumeric();
-    insertId = buffer.getLengthEncodedNumeric();
- 
-    serverStatus = buffer.readShort();
-    warnings = buffer.readShort();
-    
-    String message = "";
-    String sessionStateMessage = "";
-    if (buffer.remaining() > 0) {
-    	if ((clientCapabilities & MariaDbServerCapabilities.CLIENT_SESSION_TRACK) !=0) {
-    		message = buffer.readStringLengthEncoded(StandardCharsets.UTF_8);
-    		
-        	if ((serverStatus & ServerStatus.SERVER_SESSION_STATE_CHANGED) !=0 && buffer.remaining() > 0)  {
-        		sessionStateMessage = buffer.readStringLengthEncoded(StandardCharsets.UTF_8);
-            }
-        } 
-    	else {
-    		message = buffer.readStringNullEnd(StandardCharsets.UTF_8);
-    	}
+    public RedirectionInfo(HostAddress host, String user, int ttl) {
+        this.host 	= host;
+        this.user 	= user;
+        this.ttl 	= ttl;
     }
-    info = message;
-    sessionStateInfo = sessionStateMessage;
 
-  }
+    public HostAddress getHost() {
+        return host;
+    }
 
-  @Override
-  public String toString() {
-    return "affectedRows = "
-        + affectedRows
-        + "&insertId = "
-        + insertId
-        + "&serverStatus="
-        + serverStatus
-        + "&warnings="
-        + warnings
-        + "&info="
-        + info
-        + "&sessionStateInfo="
-        + sessionStateInfo;
-  }
+    public String getUser() {
+        return user;
+    }
 
-  public long getAffectedRows() {
-    return affectedRows;
-  }
+    public int getTTL() {
+    	return ttl;
+    }
 
-  public long getInsertId() {
-    return insertId;
-  }
+    /**
+    * Parse redirection info from a message returned by server.
+    *
+    * @param msg  the string which may contain redirection information.
+    * @return RedirectionInfo host and user for redirection.
+    */
+    public static RedirectionInfo parseRedirectionInfo(String msg) {
+        /**
+         * Get redirected server information contained in OK packet.
+         * Redirection string format:
+         * Location: mysql://[%s]:%u/?user=%s&ttl=%u\n
+         */
+    	String host = "";
+    	String user = "";
+    	int port = -1;
+    	int ttl = -1;
+        try {
 
-  public short getServerStatus() {
-    return serverStatus;
-  }
+            Pattern INFO_PATTERN_COMMUNITY =
+            		Pattern.compile("^Location: mysql://\\[([^\\]:]+)\\]:([0-9]+)/\\?user=([^&]+)&ttl=([0-9]+)\\n");
 
-  public short getWarnings() {
-    return warnings;
-  }
+            Pattern INFO_PATTERN_AZURE =
+            		Pattern.compile("^Location: mysql://([^\\]:]+):([0-9]+)/user=([^&]+)(?:&ttl=([0-9]+))?");
 
-  public String getInfo() {
-      return info;
-  }
-  
-  public String getSessionStateInfo() {
-	  return sessionStateInfo;
-  }
+            Matcher m_community = INFO_PATTERN_COMMUNITY.matcher(msg);
+            Matcher m_azure = INFO_PATTERN_AZURE.matcher(msg);
 
+            if(m_community.find()) {
+            	host = m_community.group(1);
+            	port = Integer.parseInt(m_community.group(2));
+            	user = m_community.group(3);
+            	ttl = Integer.parseInt(m_community.group(4));
+            } else if(m_azure.find()) {
+                host = m_azure.group(1);
+            	port = Integer.parseInt(m_azure.group(2));
+            	user = m_azure.group(3);
+            	ttl = m_azure.group(4) != null? Integer.parseInt(m_azure.group(4)):23;
+            }
+
+        } catch (Exception e) {
+        	//eat exception
+        	e.printStackTrace();
+        }
+
+        if(host=="") {
+        	return null;
+        }
+        else {
+        	return new RedirectionInfo(new HostAddress(host, port), user, ttl);
+        }
+    }
 }
