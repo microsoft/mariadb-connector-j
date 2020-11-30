@@ -144,7 +144,6 @@
         <configuration>
             <tagBase>https://github.com/Microsoft/mariadb-connector-j/tags</tagBase>
     		<preparationGoals>clean verify -DskipTests</preparationGoals>
-            <completionGoals> -DskipTests </completionGoals>
             <releaseProfiles>release</releaseProfiles>
         </configuration>
       </plugin>
