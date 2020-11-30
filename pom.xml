@@ -54,11 +54,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.microsoft</groupId>
+  <groupId>maven-central</groupId>
   <artifactId>microsoft-mariadb-connector-j</artifactId>
   <packaging>jar</packaging>
   <name>MariaDB Java client with redirection support for Azure MySQL</name>
-  <version>1.1-SNAPSHOT</version>
+  <version>1.0-SNAPSHOT</version>
   <description>MariaDB Java client with redirection support for Azure MySQL</description>
   <url>https://github.com/microsoft/mariadb-connector-j</url>
 
@@ -105,29 +105,6 @@
       <url>http://localhost:8081/repository/maven-central/</url>
     </repository>
   </distributionManagement>
-  <profiles>
-  <profile>
-	<id>release</id>
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.sonatype.plugins</groupId>
-				<artifactId>nexus-staging-maven-plugin</artifactId>
-				<version>1.6.8</version>
-				<extensions>true</extensions>
-				<configuration>
-					<!-- The Base URL of Nexus instance where we want to stage -->
-					<nexusUrl>http://localhost:8081</nexusUrl>
-                    <repository>maven-central</repository>
-					<!-- The server "id" element from settings to use authentication from -->
-					<serverId>maven-central</serverId>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
-</profile>
-</profiles>
-
   <build>
 
 
@@ -145,7 +122,6 @@
         <configuration>
             <tagBase>https://github.com/Microsoft/mariadb-connector-j/tags</tagBase>
     		<preparationGoals>clean verify -DskipTests</preparationGoals>
-            <releaseProfiles>release</releaseProfiles>
         </configuration>
       </plugin>
       <plugin>
