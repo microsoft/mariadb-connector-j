@@ -58,7 +58,7 @@
   <artifactId>microsoft-mariadb-connector-j</artifactId>
   <packaging>jar</packaging>
   <name>MariaDB Java client with redirection support for Azure MySQL</name>
-  <version>1.0</version>
+  <version>1.0-SNAPSHOT</version>
   <description>MariaDB Java client with redirection support for Azure MySQL</description>
   <url>https://github.com/microsoft/mariadb-connector-j</url>
 
@@ -101,8 +101,8 @@
 
   <distributionManagement>
    <repository>
-      <id>nexus-releases</id>
-      <url>http://localhost:8081/nexus/content/repositories/releases</url>
+      <id>maven-central</id>
+      <url>http://localhost:8081/repository/maven-central/</url>
     </repository>
   </distributionManagement>
   <profiles>
@@ -117,9 +117,10 @@
 				<extensions>true</extensions>
 				<configuration>
 					<!-- The Base URL of Nexus instance where we want to stage -->
-					<nexusUrl>http://localhost:8081/nexus/</nexusUrl>
+					<nexusUrl>http://localhost:8081</nexusUrl>
+                    <repository>maven-central</repository>
 					<!-- The server "id" element from settings to use authentication from -->
-					<serverId>maven-releases</serverId>
+					<serverId>maven-central</serverId>
 				</configuration>
 			</plugin>
 		</plugins>
