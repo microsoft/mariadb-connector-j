@@ -58,7 +58,7 @@
   <artifactId>microsoft-mariadb-connector-j</artifactId>
   <packaging>jar</packaging>
   <name>MariaDB Java client with redirection support for Azure MySQL</name>
-  <version>1.2</version>
+  <version>1.0-SNAPSHOT</version>
   <description>MariaDB Java client with redirection support for Azure MySQL</description>
   <url>https://github.com/microsoft/mariadb-connector-j</url>
 
