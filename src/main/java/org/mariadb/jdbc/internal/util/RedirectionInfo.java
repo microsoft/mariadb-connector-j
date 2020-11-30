@@ -54,83 +54,81 @@ package org.mariadb.jdbc.internal.util;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.mariadb.jdbc.HostAddress;
 
 public class RedirectionInfo {
-	//Redirection Info format: Location: mysql://[%s]:%u/?user=%s&ttl=%u\n
+  // Redirection Info format: Location: mysql://[%s]:%u/?user=%s&ttl=%u\n
 
-    private final HostAddress host;
-    private final String user;
-    private final int ttl;
+  private final HostAddress host;
+  private final String user;
+  private final int ttl;
 
-    public RedirectionInfo(HostAddress host, String user, int ttl) {
-        this.host 	= host;
-        this.user 	= user;
-        this.ttl 	= ttl;
-    }
+  public RedirectionInfo(HostAddress host, String user, int ttl) {
+    this.host = host;
+    this.user = user;
+    this.ttl = ttl;
+  }
 
-    public HostAddress getHost() {
-        return host;
-    }
+  public HostAddress getHost() {
+    return host;
+  }
 
-    public String getUser() {
-        return user;
-    }
+  public String getUser() {
+    return user;
+  }
 
-    public int getTTL() {
-    	return ttl;
-    }
+  public int getTTL() {
+    return ttl;
+  }
 
+  /**
+   * Parse redirection info from a message returned by server.
+   *
+   * @param msg the string which may contain redirection information.
+   * @return RedirectionInfo host and user for redirection.
+   */
+  public static RedirectionInfo parseRedirectionInfo(String msg) {
     /**
-    * Parse redirection info from a message returned by server.
-    *
-    * @param msg  the string which may contain redirection information.
-    * @return RedirectionInfo host and user for redirection.
-    */
-    public static RedirectionInfo parseRedirectionInfo(String msg) {
-        /**
-         * Get redirected server information contained in OK packet.
-         * Redirection string format:
-         * Location: mysql://[%s]:%u/?user=%s&ttl=%u\n
-         */
-    	String host = "";
-    	String user = "";
-    	int port = -1;
-    	int ttl = -1;
-        try {
+     * Get redirected server information contained in OK packet. Redirection string format:
+     * Location: mysql://[%s]:%u/?user=%s&ttl=%u\n
+     */
+    String host = "";
+    String user = "";
+    int port = -1;
+    int ttl = -1;
+    try {
 
-            Pattern INFO_PATTERN_COMMUNITY =
-            		Pattern.compile("^Location: mysql://\\[([^\\]:]+)\\]:([0-9]+)/\\?user=([^&]+)&ttl=([0-9]+)\\n");
+      Pattern INFO_PATTERN_COMMUNITY =
+          Pattern.compile(
+              "^Location: mysql://\\[([^\\]:]+)\\]:([0-9]+)/\\?user=([^&]+)&ttl=([0-9]+)\\n");
 
-            Pattern INFO_PATTERN_AZURE =
-            		Pattern.compile("^Location: mysql://([^\\]:]+):([0-9]+)/user=([^&]+)(?:&ttl=([0-9]+))?");
+      Pattern INFO_PATTERN_AZURE =
+          Pattern.compile("^Location: mysql://([^\\]:]+):([0-9]+)/user=([^&]+)(?:&ttl=([0-9]+))?");
 
-            Matcher m_community = INFO_PATTERN_COMMUNITY.matcher(msg);
-            Matcher m_azure = INFO_PATTERN_AZURE.matcher(msg);
+      Matcher m_community = INFO_PATTERN_COMMUNITY.matcher(msg);
+      Matcher m_azure = INFO_PATTERN_AZURE.matcher(msg);
 
-            if(m_community.find()) {
-            	host = m_community.group(1);
-            	port = Integer.parseInt(m_community.group(2));
-            	user = m_community.group(3);
-            	ttl = Integer.parseInt(m_community.group(4));
-            } else if(m_azure.find()) {
-                host = m_azure.group(1);
-            	port = Integer.parseInt(m_azure.group(2));
-            	user = m_azure.group(3);
-            	ttl = m_azure.group(4) != null? Integer.parseInt(m_azure.group(4)):23;
-            }
+      if (m_community.find()) {
+        host = m_community.group(1);
+        port = Integer.parseInt(m_community.group(2));
+        user = m_community.group(3);
+        ttl = Integer.parseInt(m_community.group(4));
+      } else if (m_azure.find()) {
+        host = m_azure.group(1);
+        port = Integer.parseInt(m_azure.group(2));
+        user = m_azure.group(3);
+        ttl = m_azure.group(4) != null ? Integer.parseInt(m_azure.group(4)) : 23;
+      }
 
-        } catch (Exception e) {
-        	//eat exception
-        	e.printStackTrace();
-        }
-
-        if(host=="") {
-        	return null;
-        }
-        else {
-        	return new RedirectionInfo(new HostAddress(host, port), user, ttl);
-        }
+    } catch (Exception e) {
+      // eat exception
+      e.printStackTrace();
     }
+
+    if (host == "") {
+      return null;
+    } else {
+      return new RedirectionInfo(new HostAddress(host, port), user, ttl);
+    }
+  }
 }

@@ -52,63 +52,63 @@
 
 package org.mariadb.jdbc.internal.util;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ConcurrentHashMap;
-
+import java.util.concurrent.atomic.AtomicInteger;
 import org.mariadb.jdbc.HostAddress;
 
 public final class RedirectionInfoCache extends ConcurrentHashMap<String, RedirectionInfo> {
-    private final AtomicInteger maxSize;
+  private final AtomicInteger maxSize;
 
-    public RedirectionInfoCache(int sz) {
-        maxSize = new AtomicInteger(sz);
-    }
+  public RedirectionInfoCache(int sz) {
+    maxSize = new AtomicInteger(sz);
+  }
 
-    public static RedirectionInfoCache newInstance(int maxSize) {
-        return new RedirectionInfoCache(maxSize);
-    }
+  public static RedirectionInfoCache newInstance(int maxSize) {
+    return new RedirectionInfoCache(maxSize);
+  }
 
-    private String makeKey(String user, HostAddress host) {
-        return user + "_" + host.host + "_" + host.port;
-    }
+  private String makeKey(String user, HostAddress host) {
+    return user + "_" + host.host + "_" + host.port;
+  }
 
-    /**
-    * get redirection info from cache.
-    *
-    * @param user  original connection user.
-    * @param host  original connection host.
-    * @return RedirectionInfo host and user for redirection.
-    */
-    public RedirectionInfo getRedirectionInfo(String user, HostAddress host) {
-        String key = makeKey(user, host);
-        return super.get(key);
-    }
+  /**
+   * get redirection info from cache.
+   *
+   * @param user original connection user.
+   * @param host original connection host.
+   * @return RedirectionInfo host and user for redirection.
+   */
+  public RedirectionInfo getRedirectionInfo(String user, HostAddress host) {
+    String key = makeKey(user, host);
+    return super.get(key);
+  }
 
-    /**
-    * put redirection info into cache.
-    *
-    * @param user           original connection user.
-     * @param host           original connection host.
-     * @param redirectUser   redirection connection user.
-     * @param redirectHost   redirection connection host.
-    */
-    public void putRedirectionInfo(String user, HostAddress host, HostAddress redirectHost, String redirectUser, int ttl) {
-        String key = makeKey(user, host);
-        if (maxSize.get() == -1 ||  super.size() < maxSize.get()) {
-            super.putIfAbsent(key, new RedirectionInfo(redirectHost, redirectUser, ttl));
-        } else {
-          //eat exception, use redirection info without caching it
-        }
+  /**
+   * put redirection info into cache.
+   *
+   * @param user original connection user.
+   * @param host original connection host.
+   * @param redirectUser redirection connection user.
+   * @param redirectHost redirection connection host.
+   */
+  public void putRedirectionInfo(
+      String user, HostAddress host, HostAddress redirectHost, String redirectUser, int ttl) {
+    String key = makeKey(user, host);
+    if (maxSize.get() == -1 || super.size() < maxSize.get()) {
+      super.putIfAbsent(key, new RedirectionInfo(redirectHost, redirectUser, ttl));
+    } else {
+      // eat exception, use redirection info without caching it
     }
+  }
 
-    /**
-    * remove redirection info into cache.
-    *
-    * @param user           original connection user.
-    * @param host           original connection host.
-    */
-    public void removeRedirectionInfo(String user, HostAddress host) {
-        String key = makeKey(user, host);
-        super.remove(key);
-    }
+  /**
+   * remove redirection info into cache.
+   *
+   * @param user original connection user.
+   * @param host original connection host.
+   */
+  public void removeRedirectionInfo(String user, HostAddress host) {
+    String key = makeKey(user, host);
+    super.remove(key);
+  }
 }

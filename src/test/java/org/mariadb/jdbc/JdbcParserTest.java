@@ -660,18 +660,17 @@ public class JdbcParserTest {
    */
   @Test
   public void checkEnableRedirectValue() throws SQLException {
-      UrlParser jdbc = UrlParser.parse("jdbc:mysql://hostName:3306?enableRedirect=on");
-      assertEquals(jdbc.getOptions().enableRedirect, RedirectionOption.ON.toString().toLowerCase());
+    UrlParser jdbc = UrlParser.parse("jdbc:mysql://hostName:3306?enableRedirect=on");
+    assertEquals(jdbc.getOptions().enableRedirect, RedirectionOption.ON.toString().toLowerCase());
 
-      UrlParser jdbc2 = UrlParser.parse("jdbc:mysql://hostName:3306?enableRedirect=off");
-      assertEquals(jdbc2.getOptions().enableRedirect, RedirectionOption.OFF.toString().toLowerCase());
+    UrlParser jdbc2 = UrlParser.parse("jdbc:mysql://hostName:3306?enableRedirect=off");
+    assertEquals(jdbc2.getOptions().enableRedirect, RedirectionOption.OFF.toString().toLowerCase());
 
-      UrlParser jdbc3 = UrlParser.parse("jdbc:mysql://hostName:3306?enableRedirect=preferred");
-      assertEquals(jdbc3.getOptions().enableRedirect, RedirectionOption.PREFERRED.toString().toLowerCase());
+    UrlParser jdbc3 = UrlParser.parse("jdbc:mysql://hostName:3306?enableRedirect=preferred");
+    assertEquals(
+        jdbc3.getOptions().enableRedirect, RedirectionOption.PREFERRED.toString().toLowerCase());
 
-      UrlParser jdbc4 = UrlParser.parse("jdbc:mysql://hostName:3306");
-      assertEquals(jdbc4.getOptions().enableRedirect, RedirectionOption.OFF.toString().toLowerCase());
-
+    UrlParser jdbc4 = UrlParser.parse("jdbc:mysql://hostName:3306");
+    assertEquals(jdbc4.getOptions().enableRedirect, RedirectionOption.OFF.toString().toLowerCase());
   }
-
 }

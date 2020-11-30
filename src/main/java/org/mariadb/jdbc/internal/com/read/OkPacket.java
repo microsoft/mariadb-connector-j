@@ -53,7 +53,6 @@
 package org.mariadb.jdbc.internal.com.read;
 
 import java.nio.charset.StandardCharsets;
-
 import org.mariadb.jdbc.internal.MariaDbServerCapabilities;
 import org.mariadb.jdbc.internal.util.constant.ServerStatus;
 
@@ -76,27 +75,26 @@ public class OkPacket {
     buffer.skipByte(); // 0x00 OkPacket header
     affectedRows = buffer.getLengthEncodedNumeric();
     insertId = buffer.getLengthEncodedNumeric();
- 
+
     statusFlags = buffer.readShort();
     warnings = buffer.readShort();
-    
+
     String message = "";
     String sessionStateMessage = "";
     if (buffer.remaining() > 0) {
-    	if ((clientCapabilities & MariaDbServerCapabilities.CLIENT_SESSION_TRACK) !=0) {
-    		message = buffer.readStringLengthEncoded(StandardCharsets.UTF_8);
-    		
-        	if ((statusFlags & ServerStatus.SERVER_SESSION_STATE_CHANGED) !=0 && buffer.remaining() > 0)  {
-        		sessionStateMessage = buffer.readStringLengthEncoded(StandardCharsets.UTF_8);
-            }
-        } 
-    	else {
-    		message = buffer.readStringNullEnd(StandardCharsets.UTF_8);
-    	}
+      if ((clientCapabilities & MariaDbServerCapabilities.CLIENT_SESSION_TRACK) != 0) {
+        message = buffer.readStringLengthEncoded(StandardCharsets.UTF_8);
+
+        if ((statusFlags & ServerStatus.SERVER_SESSION_STATE_CHANGED) != 0
+            && buffer.remaining() > 0) {
+          sessionStateMessage = buffer.readStringLengthEncoded(StandardCharsets.UTF_8);
+        }
+      } else {
+        message = buffer.readStringNullEnd(StandardCharsets.UTF_8);
+      }
     }
     info = message;
     sessionStateInfo = sessionStateMessage;
-
   }
 
   @Override
@@ -132,10 +130,10 @@ public class OkPacket {
   }
 
   public String getInfo() {
-      return info;
+    return info;
   }
-  
+
   public String getSessionStateInfo() {
-	  return sessionStateInfo;
+    return sessionStateInfo;
   }
 }

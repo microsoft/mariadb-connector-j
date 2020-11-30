@@ -26,7 +26,6 @@ import java.lang.reflect.Field;
 import java.sql.DriverManager;
 import java.util.Objects;
 import java.util.Properties;
-
 import org.mariadb.jdbc.internal.util.constant.RedirectionOption;
 
 @SuppressWarnings("ConstantConditions")
@@ -286,7 +285,7 @@ public class Options implements Cloneable {
     }
 
     if (!Objects.equals(enableRedirect, opt.enableRedirect)) {
-        return false;
+      return false;
     }
 
     if (log != opt.log) {

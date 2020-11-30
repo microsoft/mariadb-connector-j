@@ -62,26 +62,24 @@ import java.sql.Statement;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
-import org.mariadb.jdbc.BaseTest;
 
 public class RedirectionCacheTest extends BaseTest {
 
-	public boolean redirectAvailbleOnServer() throws SQLException {
+  public boolean redirectAvailbleOnServer() throws SQLException {
 
-	Connection connection = setBlankConnection("&enableRedirect=off");
+    Connection connection = setBlankConnection("&enableRedirect=off");
 
-	Statement stmt = connection.createStatement();
-	ResultSet result = stmt.executeQuery("show variables like \"%redirect_enabled%\";");
-	if(result.next()) {
-	  return result.getString("Value").equalsIgnoreCase("ON");
-	}
-	return false;
-		
+    Statement stmt = connection.createStatement();
+    ResultSet result = stmt.executeQuery("show variables like \"%redirect_enabled%\";");
+    if (result.next()) {
+      return result.getString("Value").equalsIgnoreCase("ON");
+    }
+    return false;
   }
 
   @Test
   public void testParseRedirectionInfo() throws SQLException {
-	Assume.assumeTrue(redirectAvailbleOnServer());
+    Assume.assumeTrue(redirectAvailbleOnServer());
 
     try {
       int NUM_OF_THREADS = 100;
