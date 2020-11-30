@@ -56,13 +56,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.mariadb.jdbc</groupId>
-  <artifactId>mariadb-java-client</artifactId>
+  <groupId>com.microsoft</groupId>
+  <artifactId>microsoft-mariadb-connector-j</artifactId>
   <packaging>jar</packaging>
-  <name>mariadb-java-client</name>
-  <version>2.7.0</version>
-  <description>JDBC driver for MariaDB and MySQL</description>
-  <url>https://mariadb.com/kb/en/mariadb/about-mariadb-connector-j/</url>
+  <name>MariaDB Java client with redirection support for Azure MySQL</name>
+  <version>2.7.0-SNAPSHOT</version>
+  <description>MariaDB Java client with redirection support for Azure MySQL</description>
+  <url>https://github.com/microsoft/mariadb-connector-j</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -78,35 +78,29 @@
   </licenses>
 
   <organization>
-    <name>mariadb.com</name>
-    <url>https://mariadb.com</url>
+    <name>microsoft.com</name>
+    <url>https://microsoft.com</url>
   </organization>
 
   <developers>
     <developer>
-      <id>mariadbJdbcDevelopers</id>
-      <name>mariadb jdbc developers</name>
-      <url>http://mariadb.org/</url>
+      <id>qibu</id>
+      <name>Qianqian Bu</name>
+      <url>https://microsoft.com</url>
     </developer>
   </developers>
 
   <scm>
-    <connection>scm:git:git://github.com/mariadb-corporation/mariadb-connector-j.git</connection>
-    <url>https://github.com/mariadb-corporation/mariadb-connector-j</url>
-    <developerConnection>scm:git:git@github.com:MariaDB/mariadb-connector-j.git
+    <connection>scm:git:git://github.com/Microsoft/mariadb-connector-j.git</connection>
+    <url>https://github.com/microsoft/mariadb-connector-j</url>
+    <developerConnection>scm:git:git@github.com:Microsoft/mariadb-connector-j.git
     </developerConnection>
   </scm>
-
-  <issueManagement>
-    <system>JIRA</system>
-    <url>https://mariadb.atlassian.net/browse/CONJ</url>
-  </issueManagement>
+  
+  <repositories>
+  </repositories>
 
   <distributionManagement>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
   </distributionManagement>
 
   <build>
@@ -117,6 +111,15 @@
       </resource>
     </resources>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>2.5.3</version>
+        <configuration>
+            <tagBase>https://github.com/Microsoft/mariadb-connector-j/tags</tagBase>
+    		<preparationGoals>clean verify -DskipTests</preparationGoals>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
@@ -200,23 +203,6 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>org.sonatype.plugins</groupId>
-        <artifactId>nexus-staging-maven-plugin</artifactId>
-        <version>1.6.8</version>
-        <extensions>true</extensions>
-        <executions>
-          <execution>
-            <phase>deploy</phase>
-          </execution>
-        </executions>
-        <configuration>
-          <serverId>ossrh</serverId>
-          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-          <autoReleaseAfterClose>false</autoReleaseAfterClose>
-        </configuration>
-      </plugin>
-
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
