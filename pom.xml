@@ -51,16 +51,14 @@
   -->
 
 
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.microsoft</groupId>
   <artifactId>microsoft-mariadb-connector-j</artifactId>
   <packaging>jar</packaging>
   <name>MariaDB Java client with redirection support for Azure MySQL</name>
-  <version>2.7.0-SNAPSHOT</version>
+  <version>v2.7.0-redirection-v1</version>
   <description>MariaDB Java client with redirection support for Azure MySQL</description>
   <url>https://github.com/microsoft/mariadb-connector-j</url>
 
@@ -95,6 +93,7 @@
     <url>https://github.com/microsoft/mariadb-connector-j</url>
     <developerConnection>scm:git:git@github.com:Microsoft/mariadb-connector-j.git
     </developerConnection>
+    <tag>microsoft-mariadb-connector-j-v2.7.0-redirection-v1</tag>
   </scm>
   
   <repositories>
