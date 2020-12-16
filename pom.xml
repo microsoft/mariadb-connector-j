@@ -93,7 +93,7 @@
     <url>https://github.com/microsoft/mariadb-connector-j</url>
     <developerConnection>scm:git:git@github.com:Microsoft/mariadb-connector-j.git
     </developerConnection>
-    <tag>microsoft-mariadb-connector-j-1.2</tag>
+    <tag>microsoft-mariadb-connector-j-1.1</tag>
   </scm>
   
   <repositories>
