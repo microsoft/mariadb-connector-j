@@ -58,7 +58,7 @@
   <artifactId>microsoft-mariadb-connector-j</artifactId>
   <packaging>jar</packaging>
   <name>MariaDB Java client with redirection support for Azure MySQL</name>
-  <version>1.1-SNAPSHOT</version>
+  <version>1.1</version>
   <description>MariaDB Java client with redirection support for Azure MySQL</description>
   <url>https://github.com/microsoft/mariadb-connector-j</url>
 
@@ -93,10 +93,14 @@
     <url>https://github.com/microsoft/mariadb-connector-j</url>
     <developerConnection>scm:git:git@github.com:Microsoft/mariadb-connector-j.git
     </developerConnection>
-    <tag>  microsoft-mariadb-connector-j-1.2</tag>
+    <tag>microsoft-mariadb-connector-j-1.2</tag>
   </scm>
   
   <repositories>
+     <repository>
+      <id>maven-central</id>
+      <url>http://localhost:8081/repository/</url>
+    </repository>
   </repositories>
 
   <distributionManagement>
@@ -208,19 +212,6 @@
         </executions>
       </plugin>
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-gpg-plugin</artifactId>
-        <version>1.6</version>
-        <executions>
-          <execution>
-            <phase>verify</phase>
-            <goals>
-              <goal>sign</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
       <plugin>
         <groupId>com.coveo</groupId>
         <artifactId>fmt-maven-plugin</artifactId>
