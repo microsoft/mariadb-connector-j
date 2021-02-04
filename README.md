@@ -1,16 +1,22 @@
-<p align="center">
-  <a href="http://mariadb.org/">
-    <img src="https://mariadb.com/themes/custom/mariadb/logo.svg">
-  </a>
-</p>
+# MariaDB Java Connector For Azure MySQL/MariaDB
 
-# MariaDB java connector Build Guide
+For general introduction for MariaDB java connector, please check on  https://github.com/MariaDB/mariadb-connector-j.
+The source code here is in the latest version same with the related branch on https://github.com/MariaDB/mariadb-connector-j with redirection feature support. Take advantage of this client to improve the connection latency between application front end and Azure Database for MySQL/MariaDB.
+Following is a brief guide of how to install and test the driver. 
 
-For general introduction for MariaDB java connector, please check on  https://github.com/MariaDB/mariadb-connector-j .
-The source code here is in the latest version same with the related branch on https://github.com/MariaDB/mariadb-connector-j with redirection feature support. 
-Following is a brief guide of how to build and test the driver. 
+## Available versions
 
-## MariaDB version
+### Maven repository version
+This driver is now available from Maven central repository search from https://mvnrepository.com/artifact/com.microsoft.azure/azure-mariadb-connector-java. The version number is same with related branch on https://github.com/MariaDB/mariadb-connector-j with redirection feature support. You may use following sample pom definition to include the driver in your project:
+```
+<dependency>
+    <groupId>com.microsoft.azure</groupId>
+    <artifactId>azure-mariadb-connector-java</artifactId>
+    <version>2.7.0</version>
+</dependency>
+```
+
+### Source code version
 The source code here is in the latest status same with the realted branch on https://github.com/MariaDB/mariadb-connector-j with redirection feature support(2020-06-03).
 Valid branches:
 * master: based on MariaDB/mariadb-connector-j branch master with redirection support.
@@ -19,6 +25,7 @@ Valid branches:
 * 2.5.1-with-redirection: based on MariaDB/mariadb-connector-j tag 2.5.1 with redirection support.
 
 **Notice** There is an issue traced for MariaDB/mariadb-connector-j 2.5.2+ on https://jira.mariadb.org/browse/CONJ-807. The problem has been fixed on 2.7.0. The recommended branch is 2.7.0-with-redirection or 2.5.1-with-redirection.
+
 
 ## Redirection option Usage
 A new connection option is introduced for redirection and the option name is **enableRedirect**, default value: **off**.
@@ -47,12 +54,11 @@ preferred(2)
 </tr>
 </table>
 
-
-## Tools prerequisite to build the drivers
+## Step to build and install from source
+### Tools prerequisite to build the drivers
 * Java 1.8+
 * Maven
 
-## Step to build and install
 ### Build
 * Assuming the code directory is mariadb-connector-j
 * Git clone https://github.com/Microsoft/mariadb-connector-j .
